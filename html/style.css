@@ -1,0 +1,80 @@
+html {
+    margin: 0;
+}
+
+body {
+    background-image: url(/images/background.jpg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+    margin: 0;
+}
+
+.container{
+    position:absolute;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    z-index: 1
+}
+
+.building-info {
+    position: absolute;
+    top: 20%;
+    left: 10%;
+    font-size: 50px;
+    font-family: 'Ubuntu', sans-serif;
+    letter-spacing: 10px;
+    stroke: #3888f0;
+    stroke-width: 3;
+    animation: textAnimation 3s infinite alternate;
+}
+
+@keyframes textAnimation {
+    0% {
+    stroke-dasharray: 0 50%;
+    stroke-dashoffset:  20%;
+    fill:hsl(268, 98%, 60%)
+    }
+
+    100% {
+    stroke-dasharray: 50% 0;
+    stroke-dashoffstet: -20%;
+    fill: hsl(71, 86%, 58%)
+    }
+}
+
+.button-style {
+    border-radius: 25px;
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 10px;
+    width: 100px;
+    height: 100px;
+    vertical-align: top;
+    margin: 20px;
+}
+
+.button-group {
+    position: absolute;
+    left: 20%;
+    bottom: 0;
+}
+
+.icon-style {
+    width: 50px;
+}
+
+.base-div-qr {
+    position:absolute;
+    height: 70%;
+    width: 100%;
+    margin: 0;
+    z-index: 2;
+    display: none;
+}
+
+.container-qr {
+    position: absolute;
+    left: 30%;
+    top: 15%;
+}

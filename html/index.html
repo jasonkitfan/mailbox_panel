@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <script type="text/javascript" src="/eel.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>@import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital@1&display=swap');</style>
+  </head>
+  <body>
+  <div id="layer-2" class="base-div-qr"><img class="container-qr" src="/images/qr_scan.gif" alt="Please place your QR code in front of the Camera" ></div>
+      <div class="container">
+      <div class="building-info">
+          <svg width=600 height=400>
+              <text id="building-name" x=10 y=120>ABC BUILDING</text>
+              <text id="device-panel" x=50 y=200>MAILBOX PANEL</text>
+          </svg>
+      </div>
+      <div class="button-group">
+        <button class="button-style" type="submit">
+          <img class="icon-style" src="/images/facial_icon.png" alt="Face" id="facial"/><br/>Facial Recognition</button>
+        <button class="button-style" type="submit">
+          <img class="icon-style" src="/images/qr_icon.png" alt="QR" id="qr"/><br/>QR Code</button>
+        <button class="button-style" type="submit">
+          <img class="icon-style" src="/images/pin_icon.png" alt="Pin" id="pin"/><br/>Pin</button>
+        <button class="button-style" type="submit">
+          <img class="icon-style" src="/images/cancel_icon.png" alt="Cancel" id="cancel"/><br/>Cancel</button>
+      </div>
+    </div>
+  </body>
+      <script src="func.js"></script>
+</html>
