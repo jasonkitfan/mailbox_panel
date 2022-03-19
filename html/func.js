@@ -23,6 +23,7 @@ document.getElementById('qr').addEventListener('click', async () => {
     document.getElementById("building-name").style.display='none';
     document.getElementById("device-panel").style.display='none';
     document.getElementById("layer-2").style.display='block';
+    py_video();
 })
 
 document.getElementById('pin').addEventListener('click', async () => {
@@ -42,3 +43,15 @@ document.getElementById('cancel').addEventListener('click', async () => {
     document.getElementById("layer-2").style.display='';
 
 })
+
+
+function py_video() {
+    eel.video_feed()()
+}
+
+
+eel.expose(updateImageSrc);
+function updateImageSrc(val) {
+    let elem = document.getElementById('qr-cam');
+    elem.src = "data:image/jpeg;base64," + val
+}

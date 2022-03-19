@@ -1,10 +1,13 @@
+# pip install opencv-contrib-python==4.5.5.62
+# pip install eel
+
 import eel
 import cv2 as cv
-# from PIL import Image, ImageTk
-# import numpy as np
+from camera import VideoCamera
+import base64
 
+# destroy all the chrome windows for lanuching in full screen mode
 # import os
-
 # os.system("taskkill /im chrome.exe /f")
 
 haar_cascade = cv.CascadeClassifier('haar_face.xml')
@@ -60,6 +63,26 @@ def data_from_js(num):
         cv.destroyAllWindows()
         print(f"isFacial = {isFacial}, isQr = {isQr}, isPin = {isPin}")
     cv.destroyAllWindows()
+
+
+def gen(camera):
+    global isQr
+    while isQr:
+        frame = camera.get_frame()
+        yield frame
+        print("getting frame")
+
+
+@eel.expose
+def video_feed():
+    x = VideoCamera()
+    y = gen(x)
+    for each in y:
+        # Convert bytes to base64 encoded str, as we can only pass json to frontend
+        blob = base64.b64encode(each)
+        blob = blob.decode("utf-8")
+        eel.updateImageSrc(blob)()
+        # time.sleep(0.1)
 
 
 eel.init("html")
