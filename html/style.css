@@ -27,7 +27,7 @@ body {
     letter-spacing: 10px;
     stroke: #3888f0;
     stroke-width: 3;
-    animation: textAnimation 3s infinite alternate;
+    animation: textAnimation 2s infinite alternate;
 }
 
 @keyframes textAnimation {
