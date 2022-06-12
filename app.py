@@ -63,6 +63,16 @@ def facial_activate(capture):
             break
 
 
+def qr_code_checking(image):
+    detector = cv.QRCodeDetector()
+    data, bbox, _ = detector.detectAndDecode(image)
+    if data:
+        print(str(data))
+    if cv.waitKey(1) == ord("q"):
+        pass
+    print("checking qr code")
+
+
 @eel.expose
 def data_from_js(num):
     global isFacial, isQr, isPin, current_num
@@ -88,8 +98,9 @@ def gen(camera):
     global isQr
     while isQr:
         frame = camera.get_frame()
+        image = camera.get_image()
+        qr_code_checking(image)
         yield frame
-        print("getting frame")
 
 
 @eel.expose
