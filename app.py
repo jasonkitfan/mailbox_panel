@@ -74,6 +74,17 @@ def qr_code_checking(image):
 
 
 @eel.expose
+def check_input(pin):
+    print(pin)
+    if pin == "123456":
+        print("valid input")
+        eel.showValid("1A", "green")()
+    else:
+        print("invalid input")
+        eel.showInvalid("red")()
+
+
+@eel.expose
 def data_from_js(num):
     global isFacial, isQr, isPin, current_num
     if num == 0 and num != current_num:
