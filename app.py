@@ -13,6 +13,12 @@ import time
 # import os
 # os.system("taskkill /im chrome.exe /f")
 
+flat = "1A"
+mega2560_id = "M01"
+lock_no = "L01"
+valid_pin = "123456"
+valid_qr = "{{fuma5xeo87tvsnn}}"
+
 arduino_serial = serial.Serial("/dev/ttyUSB0", 9600, timeout=1.0)
 
 
@@ -24,6 +30,14 @@ def serial_read():
             mydata = arduino_serial.readline().decode("utf-8").rstrip()
             print(mydata)
         time.sleep(1)
+
+
+def send_serial(board, lock, f):
+    global arduino_serial
+    data = f"{board}{lock}\n"
+    arduino_serial.write(data.encode("utf_8"))
+    eel.showValid(f"Mailbox {f} is Opening", "green")
+    print("data sent to arduino")
 
 
 haar_cascade = cv.CascadeClassifier('haar_face.xml')
@@ -50,10 +64,7 @@ def facial_activate(capture):
                 if confidence < 70:
                     cv.putText(frame, str(people[label]), (x, y), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness=2)
                     cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), thickness=2)
-                    global arduino_serial
-                    data = "open mailbox 1A\n"
-                    arduino_serial.write(data.encode("utf_8"))
-                    print("data sent to arduino")
+                    send_serial(mega2560_id, lock_no, flat)
                 else:
                     cv.putText(frame, str("Unknown"), (x, y), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 255), thickness=2)
                     cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), thickness=2)
@@ -68,6 +79,10 @@ def qr_code_checking(image):
     data, bbox, _ = detector.detectAndDecode(image)
     if data:
         print(str(data))
+        if data == valid_qr:
+            send_serial(mega2560_id, lock_no, flat)
+        else:
+            eel.showInvalid("Invalid QR code", "red")
     if cv.waitKey(1) == ord("q"):
         pass
     print("checking qr code")
@@ -76,12 +91,12 @@ def qr_code_checking(image):
 @eel.expose
 def check_input(pin):
     print(pin)
-    if pin == "123456":
+    if pin == valid_pin:
         print("valid input")
-        eel.showValid("1A", "green")()
+        send_serial(mega2560_id, lock_no, flat)
     else:
         print("invalid input")
-        eel.showInvalid("red")()
+        eel.showInvalid("Invalid Input", "red")()
 
 
 @eel.expose

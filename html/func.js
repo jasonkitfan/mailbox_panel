@@ -57,8 +57,8 @@ function updateImageSrc(val) {
 }
 
 eel.expose(showValid)
-function showValid(flat, color){
-    document.getElementById("flat-info").innerHTML = `Mailbox ${flat} is opening`;
+function showValid(message, color){
+    document.getElementById("flat-info").innerHTML = message;
     document.getElementById("flat-info").style.color = color;
     let x = document.getElementById("layer-4")
     x.style.backgroundImage = "url(images/success.gif)";
@@ -69,8 +69,8 @@ function showValid(flat, color){
 }
 
 eel.expose(showInvalid)
-function showInvalid(color){
-    document.getElementById("flat-info").innerHTML = "Invalid input";
+function showInvalid(message, color){
+    document.getElementById("flat-info").innerHTML = message;
     document.getElementById("flat-info").style.color = color;
     let x = document.getElementById("layer-4")
     x.style.backgroundImage = "url(images/failure.gif)";
