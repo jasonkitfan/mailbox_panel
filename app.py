@@ -19,17 +19,43 @@ lock_no = "L01"
 valid_pin = "123456"
 valid_qr = "{{fuma5xeo87tvsnn}}"
 
-arduino_serial = serial.Serial("/dev/ttyUSB0", 9600, timeout=1.0)
+"""
+data_qr = {
+    "{{abc}}": 
+        {
+        "mega_id": "M01",
+        "lock_no": "L01",
+        "flat": "1A",
+        "valid_time": "01012000",
+        }
+    "{{def}}": 
+        {
+        "mega_id": "M01",
+        "lock_no": "L02",
+        "flat": "1B",
+        "valid_time": "01012005",
+        }
+    "{{ghi}}": 
+        {
+        "mega_id": "M01",
+        "lock_no": "L03",
+        "flat": "1C",
+        "valid_time": "01012010",
+        }
+}
+"""
+
+arduino_serial = serial.Serial("/dev/ttyUSB0", 9600, timeout=0.1)
 
 
 def serial_read():
     global arduino_serial
+    arduino_serial.flush()
     while True:
         time.sleep(0.01)
         if arduino_serial.in_waiting > 0:
             mydata = arduino_serial.readline().decode("utf-8").rstrip()
             print(mydata)
-        time.sleep(1)
 
 
 def send_serial(board, lock, f):
@@ -49,6 +75,7 @@ isFacial, isQr, isPin, current_num = False, False, False, -1
 
 
 def facial_activate(capture):
+    global isFacial
     while isFacial:
         eel.sleep(0.001)
         is_true, frame = capture.read()
@@ -65,6 +92,7 @@ def facial_activate(capture):
                     cv.putText(frame, str(people[label]), (x, y), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness=2)
                     cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), thickness=2)
                     send_serial(mega2560_id, lock_no, flat)
+                    isFacial = False
                 else:
                     cv.putText(frame, str("Unknown"), (x, y), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 255), thickness=2)
                     cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), thickness=2)
@@ -75,12 +103,14 @@ def facial_activate(capture):
 
 
 def qr_code_checking(image):
+    global isQr
     detector = cv.QRCodeDetector()
     data, bbox, _ = detector.detectAndDecode(image)
     if data:
         print(str(data))
         if data == valid_qr:
             send_serial(mega2560_id, lock_no, flat)
+            isQr = False
         else:
             eel.showInvalid("Invalid QR code", "red")
     if cv.waitKey(1) == ord("q"):
