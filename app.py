@@ -8,6 +8,7 @@ import base64
 import serial
 from multiprocessing import Process
 import time
+from mfrc522 import SimpleMFRC522
 
 # destroy all the chrome windows for lanuching in full screen mode
 # import os
@@ -54,8 +55,11 @@ def serial_read():
     while True:
         time.sleep(0.01)
         if arduino_serial.in_waiting > 0:
-            mydata = arduino_serial.readline().decode("utf-8").rstrip()
-            print(mydata)
+            try:
+                mydata = arduino_serial.readline().decode("utf-8").rstrip()
+                print(mydata)
+            except:
+                print("something cannot decode")
 
 
 def send_serial(board, lock, f):
@@ -171,9 +175,29 @@ def video_feed():
         # time.sleep(0.1)
 
 
+white_card = 148037121234
+blue_card = 315569001347
+
+
+def rfid_read():
+    reader = SimpleMFRC522()
+    while True:
+        time.sleep(1)
+        try:
+            unique_id, text = reader.read()
+            print(unique_id)
+            if unique_id == white_card:
+                send_serial(mega2560_id, lock_no, flat)
+            # print(text)
+        except:
+            print("unable to read")
+
+
 def main():
     arduino = Process(target=serial_read)
     arduino.start()
+    rfid = Process(target=rfid_read)
+    rfid.start()
     eel.init("html")
     eel.start('index.html', mode='chrome', cmdline_args=['--kiosk'])
 

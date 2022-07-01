@@ -8,6 +8,7 @@ body {
     background-size: cover;
     background-attachment: fixed;
     margin: 0;
+    background-position: center center;
 }
 
 .container{
@@ -75,8 +76,9 @@ body {
 
 .container-qr {
     position: absolute;
-    left: 18%;
+    left: 23%;
     top: 15%;
+    height: 400px;
 }
 
 .div-pin {
@@ -91,7 +93,7 @@ body {
 
 .pin-input {
     margin: auto;
-    margin-top:15%;
+    margin-top:10%;
     font-size: 6rem;
     width: 60%;
     display: table;
@@ -106,9 +108,9 @@ body {
 }
 
 .keypad-button-style {
-    width: 100px;
-    height: 100px;
-    font-size: 50px;
+    width: 70px;
+    height: 70px;
+    font-size: 30px;
     margin: 15px;
     transition-duration: 0.4s;
     background-color: white;
@@ -133,7 +135,7 @@ body {
 }
 
 #flat-info {
-    font-size: 4rem;
+    font-size: 3rem;
     color: white;
-    margin-top: 60%;
+    margin-top: 50%;
 }
