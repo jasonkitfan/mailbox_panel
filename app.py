@@ -9,12 +9,13 @@ import serial
 from multiprocessing import Process
 import time
 from mfrc522 import SimpleMFRC522
+import mariadb
 
 # destroy all the chrome windows for lanuching in full screen mode
 # import os
 # os.system("taskkill /im chrome.exe /f")
 
-flat = "1A"
+temp_flat = "1A"
 mega2560_id = "M01"
 lock_no = "L01"
 valid_pin = "123456"
@@ -70,6 +71,8 @@ def send_serial(board, lock, f):
     print("data sent to arduino")
 
 
+db = mariadb.MySQL("mailbox")
+
 haar_cascade = cv.CascadeClassifier('haar_face.xml')
 face_recognizer = cv.face.LBPHFaceRecognizer_create()
 face_recognizer.read('face_trained.yml')
@@ -95,7 +98,7 @@ def facial_activate(capture):
                 if confidence < 70:
                     cv.putText(frame, str(people[label]), (x, y), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness=2)
                     cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), thickness=2)
-                    send_serial(mega2560_id, lock_no, flat)
+                    send_serial(mega2560_id, lock_no, temp_flat)
                     isFacial = False
                 else:
                     cv.putText(frame, str("Unknown"), (x, y), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 255), thickness=2)
@@ -107,12 +110,13 @@ def facial_activate(capture):
 
 
 def qr_code_checking(image):
-    global isQr
+    global isQr, db
     detector = cv.QRCodeDetector()
     data, bbox, _ = detector.detectAndDecode(image)
     if data:
         print(str(data))
-        if data == valid_qr:
+        is_valid, flat = db.check_qr_code(data)
+        if is_valid:
             send_serial(mega2560_id, lock_no, flat)
             isQr = False
         else:
@@ -125,7 +129,8 @@ def qr_code_checking(image):
 @eel.expose
 def check_input(pin):
     print(pin)
-    if pin == valid_pin:
+    is_valid, flat = db.check_pin(pin)
+    if is_valid:
         print("valid input")
         send_serial(mega2560_id, lock_no, flat)
     else:
@@ -175,18 +180,18 @@ def video_feed():
         # time.sleep(0.1)
 
 
-white_card = 148037121234
-blue_card = 315569001347
-
-
 def rfid_read():
+    global db
     reader = SimpleMFRC522()
     while True:
         time.sleep(1)
         try:
             unique_id, text = reader.read()
             print(unique_id)
-            if unique_id == white_card:
+            print(type(unique_id))
+            is_valid, flat = db.check_rfid(str(unique_id))
+            print("that card is valid")
+            if is_valid:
                 send_serial(mega2560_id, lock_no, flat)
             # print(text)
         except:
