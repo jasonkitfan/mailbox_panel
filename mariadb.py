@@ -153,6 +153,9 @@ class MySQL:
             self.insert_qr_code('1B')
         self.insert_rfid("148037121234", "1A")
         self.insert_rfid("315569001347", "1B")
+        self.show_all_data()
+
+    def show_all_data(self):
         self.show_data("rfid")
         self.show_data("qr_code")
         self.show_data("pin")
@@ -179,7 +182,3 @@ class MySQL:
 #     "CREATE TABLE pin (pin VARCHAR(255) PRIMARY KEY, flat VARCHAR(255), time VARCHAR(255))"
 # ]
 #
-# test = MySQL("mailbox")
-# test.show_data("rfid")
-# test.show_data("qr_code")
-# test.show_data("pin")

@@ -9,7 +9,9 @@ import serial
 from multiprocessing import Process
 import time
 from mfrc522 import SimpleMFRC522
-import mariadb
+from mariadb import MySQL
+from mqtt_subscribe import SubscribeMQTT
+from api_to_server import APIToServer
 
 # destroy all the chrome windows for lanuching in full screen mode
 # import os
@@ -47,7 +49,11 @@ data_qr = {
 }
 """
 
+
 arduino_serial = serial.Serial("/dev/ttyUSB0", 9600, timeout=0.1)
+subscriber = SubscribeMQTT(arduino_serial)
+db = MySQL("mailbox")
+api = APIToServer()
 
 
 def serial_read():
@@ -70,8 +76,6 @@ def send_serial(board, lock, f):
     eel.showValid(f"Mailbox {f} is Opening", "green")
     print("data sent to arduino")
 
-
-db = mariadb.MySQL("mailbox")
 
 haar_cascade = cv.CascadeClassifier('haar_face.xml')
 face_recognizer = cv.face.LBPHFaceRecognizer_create()
@@ -96,7 +100,8 @@ def facial_activate(capture):
                 print(f'Label = {people[label]} with a confidence of {confidence}')
 
                 if confidence < 70:
-                    cv.putText(frame, str(people[label]), (x, y), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0), thickness=2)
+                    cv.putText(frame, str(people[label]), (x, y), cv.FONT_HERSHEY_COMPLEX, 1.0, (0, 255, 0),
+                               thickness=2)
                     cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), thickness=2)
                     send_serial(mega2560_id, lock_no, temp_flat)
                     isFacial = False
@@ -116,7 +121,11 @@ def qr_code_checking(image):
     if data:
         print(str(data))
         is_valid, flat = db.check_qr_code(data)
+        is_valid_api = api.check_qr_code(data)
         if is_valid:
+            send_serial(mega2560_id, lock_no, flat)
+            isQr = False
+        elif is_valid_api:
             send_serial(mega2560_id, lock_no, flat)
             isQr = False
         else:
@@ -203,6 +212,8 @@ def main():
     arduino.start()
     rfid = Process(target=rfid_read)
     rfid.start()
+    mqtt_sub = Process(target=subscriber.start_subscribe)
+    mqtt_sub.start()
     eel.init("html")
     eel.start('index.html', mode='chrome', cmdline_args=['--kiosk'])
 
