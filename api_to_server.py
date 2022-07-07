@@ -13,9 +13,16 @@ class APIToServer:
         self.url = "http://54.251.29.106/"
         self.status_url = "locker/updateLockerStatus"
         self.check_qr_url = "locker/verifyQRcode"
+        self.id = "raspberrypi"
 
-    def update_locker_status(self):
-        response = requests.post(f"{self.url}{self.status_url}")
+    def update_locker_status(self, flat, status, time):
+        data = {
+            "pi_id": self.id,
+            "flat": flat,
+            "action": status,
+            "actionTime": time
+        }
+        response = requests.post(f"{self.url}{self.status_url}", json=data)
         print(response.status_code)
 
     def check_qr_code(self, qr):

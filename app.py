@@ -23,36 +23,9 @@ lock_no = "L01"
 valid_pin = "123456"
 valid_qr = "{{fuma5xeo87tvsnn}}"
 
-"""
-data_qr = {
-    "{{abc}}": 
-        {
-        "mega_id": "M01",
-        "lock_no": "L01",
-        "flat": "1A",
-        "valid_time": "01012000",
-        }
-    "{{def}}": 
-        {
-        "mega_id": "M01",
-        "lock_no": "L02",
-        "flat": "1B",
-        "valid_time": "01012005",
-        }
-    "{{ghi}}": 
-        {
-        "mega_id": "M01",
-        "lock_no": "L03",
-        "flat": "1C",
-        "valid_time": "01012010",
-        }
-}
-"""
-
-
 arduino_serial = serial.Serial("/dev/ttyUSB0", 9600, timeout=0.1)
-subscriber = SubscribeMQTT(arduino_serial)
 db = MySQL("mailbox")
+subscriber = SubscribeMQTT(arduino_serial, db)
 api = APIToServer()
 
 
@@ -121,7 +94,11 @@ def qr_code_checking(image):
     if data:
         print(str(data))
         is_valid, flat = db.check_qr_code(data)
-        is_valid_api = api.check_qr_code(data)
+        is_valid_api = False
+        try:
+            is_valid_api = api.check_qr_code(data)
+        except ValueError:
+            print("json decode error, probably caused by static qr code")
         if is_valid:
             send_serial(mega2560_id, lock_no, flat)
             isQr = False
