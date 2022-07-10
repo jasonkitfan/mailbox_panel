@@ -92,6 +92,18 @@ class MySQL:
 
     def refresh_qr_code(self, flat):
         new_qr_code, time = self.generate_qr_code()
+
+        sql = f"SELECT 1 FROM qr_code WHERE flat = '{flat}'"
+        self.cursor.execute(sql)
+        record = [x for x in self.cursor]
+        if len(record) != 0:
+            sql = f"UPDATE qr_code SET qr_code = '{new_qr_code}', time = '{time}' WHERE flat = '{flat}'"
+            self.cursor.execute(sql)
+            print(f"updated pin '{new_qr_code}' for flat '{flat}'")
+        else:
+            new_qr_code = self.insert_qr_code(flat)
+            print(f"inserted pin '{new_qr_code}' for flat '{flat}'")
+
         sql = f"UPDATE qr_code SET qr_code = '{new_qr_code}', time = '{time}' WHERE flat = '{flat}'"
         self.cursor.execute(sql)
         return new_qr_code
@@ -100,15 +112,15 @@ class MySQL:
         sql = f"SELECT {table}, time FROM {table} WHERE flat = '{flat}'"
         self.cursor.execute(sql)
         print(f"table = {table}")
-        try:
-            record = [x for x in self.cursor][0]
-            if int(float(record[1])) + self.valid_duration > datetime.now().timestamp():
-                return record[0], True, float(record[1])
+        record = [x for x in self.cursor]
+        if len(record) != 0:
+            if int(float(record[0][1])) + self.valid_duration > datetime.now().timestamp():
+                return record[0][0], True, float(record[0][1])
             else:
                 sql = f"DELETE FROM {table} WHERE flat = '{flat}'"
                 self.cursor.execute(sql)
-                return "", False, record[1]
-        except:
+                return "", False, record[0][1]
+        else:
             time = datetime.now().timestamp()
             if table == "qr_code":
                 qr = self.insert_qr_code(flat)
@@ -260,6 +272,45 @@ class MySQL:
         current_time = datetime.now().timestamp()
         return random_letters, current_time
 
+    def reset_alert(self, flat):
+        sql = f"UPDATE data SET door_alert = 0, tof_alert = 0, letter_alert = 0 WHERE flat = '{flat}'"
+        self.cursor.execute(sql)
+
+    def update_data_from_arduino(self, flat, detection):
+        if detection == "letter_alert":
+            sql = f"UPDATE data SET letter_alert = letter_alert + 1 WHERE flat = '{flat}'"
+            self.cursor.execute(sql)
+        elif detection == "tof_alert":
+            sql = f"UPDATE data SET tof_alert = tof_alert + 1 WHERE flat = '{flat}'"
+            self.cursor.execute(sql)
+        elif detection == "door_alert":
+            sql = f"UPDATE data SET door_alert = door_alert + 1, door_status = 'open' WHERE flat = '{flat}'"
+            self.cursor.execute(sql)
+        elif detection == "new_letter":
+            sql = f"UPDATE data SET new_letter = new_letter + 1 WHERE flat = '{flat}'"
+            self.cursor.execute(sql)
+        elif detection == "lock_open":
+            sql = f"UPDATE data SET lock_status = 'open', door_status = 'open', new_letter = 0 WHERE flat = '{flat}'"
+            self.cursor.execute(sql)
+        elif detection == "lock_close":
+            sql = f"UPDATE data SET lock_status = 'close', door_status = 'close' WHERE flat = '{flat}'"
+            self.cursor.execute(sql)
+        elif detection == "door_closed":
+            sql = f"UPDATE data SET door_status = 'close' WHERE flat = '{flat}'"
+            self.cursor.execute(sql)
+
+    def is_data_in_db(self, table, flat):
+        sql = f"SELECT {table}, time FROM {table} WHERE flat = '{flat}'"
+        self.cursor.execute(sql)
+        print(f"table = {table}")
+        record = [x for x in self.cursor]
+        if len(record) != 0:
+            if int(float(record[0][1])) + self.valid_duration > datetime.now().timestamp():
+                return True
+            else:
+                return False
+        else:
+            return False
 
 """
     "SELECT * FROM customers"

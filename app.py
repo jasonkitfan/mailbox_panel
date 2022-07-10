@@ -12,6 +12,8 @@ from mfrc522 import SimpleMFRC522
 from mariadb import MySQL
 from mqtt_subscribe import SubscribeMQTT
 from api_to_server import APIToServer
+import json
+from mega_data import mega_data
 
 # destroy all the chrome windows for lanuching in full screen mode
 # import os
@@ -20,8 +22,6 @@ from api_to_server import APIToServer
 temp_flat = "1A"
 mega2560_id = "M01"
 lock_no = "L01"
-valid_pin = "123456"
-valid_qr = "{{fuma5xeo87tvsnn}}"
 
 arduino_serial = serial.Serial("/dev/ttyUSB0", 9600, timeout=0.1)
 db = MySQL("mailbox")
@@ -38,16 +38,27 @@ def serial_read():
             try:
                 mydata = arduino_serial.readline().decode("utf-8").rstrip()
                 print(mydata)
-            except:
-                print("something cannot decode")
+                convert = mydata.replace("'", "\"")
+                dict_data = json.loads(convert)
+                if dict_data["mega_id"] in mega_data:
+                    retrive_flat = mega_data[dict_data["mega_id"]][int(dict_data["position"])]
+                    db.update_data_from_arduino(retrive_flat, dict_data["detection"])
+                    api.update_locker_status(retrive_flat, dict_data["detection"], )
+                    subscriber.take_action("request_data", retrive_flat)
+
+            except Exception as e:
+                print(f"something cannot decode: {e}")
 
 
 def send_serial(board, lock, f):
     global arduino_serial
     data = f"{board}{lock}\n"
-    arduino_serial.write(data.encode("utf_8"))
-    eel.showValid(f"Mailbox {f} is Opening", "green")
-    print("data sent to arduino")
+    try:
+        arduino_serial.write(data.encode("utf_8"))
+        eel.showValid(f"Mailbox {f} is Opening", "green")
+        print("data sent to arduino")
+    except Exception as e :
+        print(f"error occurs when sending data to arduino: {e}")
 
 
 haar_cascade = cv.CascadeClassifier('haar_face.xml')

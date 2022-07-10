@@ -5,6 +5,7 @@ import json
 from paho.mqtt import client as mqtt_client
 from mqtt_publish import PublishMQTT
 import datetime
+from mega_data import mega_data
 
 """
 broker 
@@ -25,10 +26,9 @@ class SubscribeMQTT:
         self.mysql = mysql
         self.arduino = arduino
         self.id = "raspberrypi"
-        self.client = ""
+        self.client = self.connect_mqtt()
 
     def start_subscribe(self):
-        self.client = self.connect_mqtt()
         self.subscribe(self.client)
         self.client.loop_forever()
 
@@ -74,6 +74,8 @@ class SubscribeMQTT:
             data = self.mysql.get_mailbox_data(flat)
             data["command"] = "response_data"
             data["receiver"] = flat
+            data["qr_still_valid"] = self.mysql.is_data_in_db("qr_code", flat)
+            data["pin_still_valid"] = self.mysql.is_data_in_db("pin", flat)
             dict_to_json = json.dumps(data)
             self.publish(dict_to_json)
 
@@ -143,6 +145,17 @@ class SubscribeMQTT:
             dict_to_json = json.dumps(data)
             self.publish(dict_to_json)
 
+        elif command == "reset_alert":
+            print("reseting alert")
+            self.mysql.reset_alert(flat)
+            self.take_action("request_data", flat)
+            mega_id, position = self.get_meag_id_position(flat)
+            position = str(position)
+            while len(position) < 2:
+                position = "0" + position
+            data = f"reset{mega_id}P{position}\n"
+            self.arduino.write(data.encode("utf_8"))
+
     def get_valid_time(self):
         now = datetime.datetime.now()
         time_change = datetime.timedelta(minutes=5)
@@ -150,3 +163,10 @@ class SubscribeMQTT:
         start_time = f"{now.date()} {now.strftime('%X')}"
         end_time = f"{valid_time.date()} {valid_time.strftime('%X')}"
         return start_time, end_time
+
+    def get_meag_id_position(self, flat):
+        for key, value in mega_data.items():
+            if flat in value:
+                return key, value.index(flat)
+            else:
+                return "", ""
