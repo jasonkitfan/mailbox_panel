@@ -15,13 +15,14 @@ from api_to_server import APIToServer
 import json
 from mega_data import mega_data
 
+
 # destroy all the chrome windows for lanuching in full screen mode
 # import os
 # os.system("taskkill /im chrome.exe /f")
 
 temp_flat = "1A"
 mega2560_id = "M01"
-lock_no = "L01"
+lock_no = "L00"
 
 arduino_serial = serial.Serial("/dev/ttyUSB0", 9600, timeout=0.1)
 db = MySQL("mailbox")
@@ -56,7 +57,7 @@ def send_serial(board, lock, f):
     try:
         arduino_serial.write(data.encode("utf_8"))
         eel.showValid(f"Mailbox {f} is Opening", "green")
-        print("data sent to arduino")
+        print(f"data sent to arduino: {data}")
     except Exception as e :
         print(f"error occurs when sending data to arduino: {e}")
 
@@ -99,19 +100,20 @@ def facial_activate(capture):
 
 
 def qr_code_checking(image):
+    print("checking qr code")
     global isQr, db
     detector = cv.QRCodeDetector()
     data, bbox, _ = detector.detectAndDecode(image)
     if data:
         print(str(data))
-        is_valid, flat = db.check_qr_code(data)
+        is_valid, flat, board_id, location = db.check_qr_code(data)
         is_valid_api = False
         try:
             is_valid_api = api.check_qr_code(data)
         except ValueError:
             print("json decode error, probably caused by static qr code")
         if is_valid:
-            send_serial(mega2560_id, lock_no, flat)
+            send_serial(board_id, location, flat)
             isQr = False
         elif is_valid_api:
             send_serial(mega2560_id, lock_no, flat)
@@ -120,16 +122,15 @@ def qr_code_checking(image):
             eel.showInvalid("Invalid QR code", "red")
     if cv.waitKey(1) == ord("q"):
         pass
-    print("checking qr code")
 
 
 @eel.expose
 def check_input(pin):
     print(pin)
-    is_valid, flat = db.check_pin(pin)
+    is_valid, flat, board_id, location = db.check_pin(pin)
     if is_valid:
         print("valid input")
-        send_serial(mega2560_id, lock_no, flat)
+        send_serial(board_id, location, flat)
     else:
         print("invalid input")
         eel.showInvalid("Invalid Input", "red")()
@@ -181,15 +182,15 @@ def rfid_read():
     global db
     reader = SimpleMFRC522()
     while True:
-        time.sleep(1)
+        time.sleep(0.001)
+
         try:
             unique_id, text = reader.read()
             print(unique_id)
-            print(type(unique_id))
-            is_valid, flat = db.check_rfid(str(unique_id))
-            print("that card is valid")
+            is_valid, flat, board_id, location = db.check_rfid(str(unique_id))
+            print("card is valid")
             if is_valid:
-                send_serial(mega2560_id, lock_no, flat)
+                send_serial(board_id, location, flat)
             # print(text)
         except:
             print("unable to read")

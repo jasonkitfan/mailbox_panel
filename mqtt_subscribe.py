@@ -67,17 +67,22 @@ class SubscribeMQTT:
 
         if command == "open_mailbox":
             print(f"i am opening mailbox {flat}")
-            self.arduino.write("M01L01\n".encode("utf_8"))
+            mega_id, position = self.get_meag_id_position(flat)
+            position = str(position)
+            while len(position) < 2:
+                position = "0" + position
+            self.arduino.write(f"{mega_id}L{position}\n".encode("utf_8"))
 
         elif command == "request_data":
             print(f"getting mailbox data for {flat}")
             data = self.mysql.get_mailbox_data(flat)
-            data["command"] = "response_data"
-            data["receiver"] = flat
-            data["qr_still_valid"] = self.mysql.is_data_in_db("qr_code", flat)
-            data["pin_still_valid"] = self.mysql.is_data_in_db("pin", flat)
-            dict_to_json = json.dumps(data)
-            self.publish(dict_to_json)
+            if data != "":
+                data["command"] = "response_data"
+                data["receiver"] = flat
+                data["qr_still_valid"] = self.mysql.is_data_in_db("qr_code", flat)
+                data["pin_still_valid"] = self.mysql.is_data_in_db("pin", flat)
+                dict_to_json = json.dumps(data)
+                self.publish(dict_to_json)
 
         elif command == "request_qr_code":
             data = {"command": "response_qr_code", "receiver": flat}

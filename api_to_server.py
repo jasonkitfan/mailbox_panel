@@ -17,7 +17,7 @@ class APIToServer:
         self.id = "raspberrypi"
 
     def update_locker_status(self, flat, status):
-        time = datetime.datetime.now().timestamp()
+        time = int(datetime.datetime.now().timestamp())
         data = {
             "pi_id": self.id,
             "flat": flat,

@@ -2,6 +2,7 @@ import mysql.connector as database
 import random
 import string
 from datetime import datetime
+from mega_data import mega_data
 
 
 class MySQL:
@@ -35,10 +36,8 @@ class MySQL:
         print(f"record found: {len(record)}")
 
     def delete_table(self, table_name):
-        print("Before")
         self.show_table()
         self.cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
-        print("After")
         self.show_table()
 
     def delete_database(self, db_name):
@@ -57,14 +56,20 @@ class MySQL:
             if qr_code in record[0][0] and datetime.now().timestamp() - int(float(record[0][2])) < self.valid_duration:
                 print(f"valid QR code '{qr_code}'")
                 self.delete_qr_code(qr_code)
-                return True, record[0][1]
+
+                mega_id, position = self.get_meag_id_position(record[0][1])
+                position = str(position)
+                while len(position) < 2:
+                    position = "0" + position
+                position = "L" + position
+                return True, record[0][1], mega_id, position
             else:
                 print(f"expired QR code '{qr_code}'.")
                 self.delete_qr_code(qr_code)
-                return False, ""
+                return False, "", "", ""
         else:
             print(f"invalid QR code '{qr_code}'.")
-            return False, ""
+            return False, "", "", ""
 
     def check_duplicated_qr(self, qr_code):
         self.cursor.execute(f"SELECT qr_code FROM qr_code")
@@ -99,10 +104,8 @@ class MySQL:
         if len(record) != 0:
             sql = f"UPDATE qr_code SET qr_code = '{new_qr_code}', time = '{time}' WHERE flat = '{flat}'"
             self.cursor.execute(sql)
-            print(f"updated pin '{new_qr_code}' for flat '{flat}'")
         else:
             new_qr_code = self.insert_qr_code(flat)
-            print(f"inserted pin '{new_qr_code}' for flat '{flat}'")
 
         sql = f"UPDATE qr_code SET qr_code = '{new_qr_code}', time = '{time}' WHERE flat = '{flat}'"
         self.cursor.execute(sql)
@@ -111,7 +114,6 @@ class MySQL:
     def check_if_still_valid(self, table, flat):
         sql = f"SELECT {table}, time FROM {table} WHERE flat = '{flat}'"
         self.cursor.execute(sql)
-        print(f"table = {table}")
         record = [x for x in self.cursor]
         if len(record) != 0:
             if int(float(record[0][1])) + self.valid_duration > datetime.now().timestamp():
@@ -136,20 +138,22 @@ class MySQL:
     def check_pin(self, pin):
         self.cursor.execute(f"SELECT * FROM pin WHERE pin = '{pin}'")
         record = [x for x in self.cursor]
-        print(f"checking pin: {pin}"),
-        print(self.show_data("pin"))
         if len(record) != 0:
             if pin in record[0][0] and datetime.now().timestamp() - int(float(record[0][2])) < self.valid_duration:
-                print(f"valid Pin '{pin}'")
                 self.delete_pin(pin)
-                return True, record[0][1]
+
+                mega_id, position = self.get_meag_id_position(record[0][1])
+                position = str(position)
+                while len(position) < 2:
+                    position = "0" + position
+                position = "L" + position
+
+                return True, record[0][1], mega_id, position
             else:
-                print(f"expired Pin '{pin}'.")
                 self.delete_pin(pin)
-                return False, ""
+                return False, "", "", ""
         else:
-            print(f"invalid Pin '{pin}'.")
-            return False, ""
+            return False, "", "", ""
 
     def check_duplicated_pin(self, pin):
         self.cursor.execute(f"SELECT pin FROM pin")
@@ -170,15 +174,18 @@ class MySQL:
     def check_rfid(self, unique_id):
         self.cursor.execute(f"SELECT * FROM rfid WHERE id = '{unique_id}'")
         record = [x for x in self.cursor]
-        print(f"checking rfid card: '{unique_id}'")
-        print(record)
         if len(record) != 0:
             if unique_id in record[0][0]:
-                print(f"valid card '{unique_id}'")
-                return True, record[0][1]
+
+                mega_id, position = self.get_meag_id_position(record[0][1])
+                position = str(position)
+                while len(position) < 2:
+                    position = "0" + position
+                position = "L" + position
+
+                return True, record[0][1], mega_id, position
         else:
-            print(f"invalid card '{unique_id}'")
-            return False, ""
+            return False, "", "", ""
 
     def insert_rfid(self, card, flat):
         sql = "INSERT INTO rfid (id, flat) VALUES (%s, %s)"
@@ -210,17 +217,20 @@ class MySQL:
     def get_mailbox_data(self, flat):
         sql = f"SELECT * FROM data WHERE flat = '{flat}'"
         self.cursor.execute(sql)
-        record = [x for x in self.cursor][0]
-        data = {
-            "receiver": record[0],
-            "new_letter": record[1],
-            "door_alert": record[2],
-            "letter_alert": record[3],
-            "tof_alert": record[4],
-            "door_status": record[5],
-            "lock_status": record[6]
-        }
-        return data
+        record = [x for x in self.cursor]
+        if len(record) != 0:
+            data = {
+                "receiver": record[0][0],
+                "new_letter": record[0][1],
+                "door_alert": record[0][2],
+                "letter_alert": record[0][3],
+                "tof_alert": record[0][4],
+                "door_status": record[0][5],
+                "lock_status": record[0][6]
+            }
+            return data
+        else:
+            return ""
 
     def get_qr_code(self, flat):
         qr_code = self.insert_qr_code(flat)
@@ -254,12 +264,8 @@ class MySQL:
         if len(record) != 0:
             sql = f"UPDATE pin SET pin = '{new_pin_code}', time = '{time}' WHERE flat = '{flat}'"
             self.cursor.execute(sql)
-            print(f"updated pin '{new_pin_code}' for flat '{flat}'")
         else:
             new_pin_code = self.insert_pin(flat)
-            print(f"inserted pin '{new_pin_code}' for flat '{flat}'")
-        print("refreshed pin data:")
-        print(self.show_data("pin"))
         return new_pin_code
 
     def generate_pin_code(self):
@@ -302,7 +308,6 @@ class MySQL:
     def is_data_in_db(self, table, flat):
         sql = f"SELECT {table}, time FROM {table} WHERE flat = '{flat}'"
         self.cursor.execute(sql)
-        print(f"table = {table}")
         record = [x for x in self.cursor]
         if len(record) != 0:
             if int(float(record[0][1])) + self.valid_duration > datetime.now().timestamp():
@@ -311,6 +316,13 @@ class MySQL:
                 return False
         else:
             return False
+
+    def get_meag_id_position(self, flat):
+        for key, value in mega_data.items():
+            if flat in value:
+                return key, value.index(flat)
+            else:
+                return "", ""
 
 """
     "SELECT * FROM customers"
